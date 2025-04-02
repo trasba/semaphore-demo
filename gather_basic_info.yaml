@@ -1,0 +1,16 @@
+---
+- name: Gather Basic Host Information
+  hosts: all  # Semaphore will apply this to the hosts within your selected 'kapi9' inventory
+  gather_facts: true # This automatically runs the setup module to collect facts
+
+  tasks:
+    - name: Display Collected Basic Information
+      ansible.builtin.debug:
+        msg: |
+          Hostname: {{ ansible_hostname }}
+          FQDN: {{ ansible_fqdn }}
+          Distribution: {{ ansible_distribution }} {{ ansible_distribution_version }}
+          Architecture: {{ ansible_architecture }}
+          Default IPv4: {{ ansible_default_ipv4.address | default('N/A') }}
+          Total Memory (MB): {{ ansible_memtotal_mb }}
+          Processor Cores: {{ ansible_processor_vcpus | default(ansible_processor_cores) | default('N/A') }}
