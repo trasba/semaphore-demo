@@ -5,8 +5,8 @@
   #become_method: sudo
   #become_user: root
   #become_ask_pass: false #we are providing the password through variable.
-  vars:
-    become_pass: "{{ vault_become_password }}" # vault_become_password is the variable name in Semaphore UI vault.
+  #vars:
+  #  become_pass: "{{ vault_become_password }}" # vault_become_password is the variable name in Semaphore UI vault.
   tasks:
     - name: Ensure PubkeyAuthentication is enabled
       lineinfile:
