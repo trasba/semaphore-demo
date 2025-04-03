@@ -1,10 +1,9 @@
 ---
-- name: Gather Detailed Host Information (Simplified IPv6)
-  hosts: all  # Semaphore will apply this to the hosts within your selected 'kapi9' inventory
+- name: Gather Detailed Host Information (Simplified IPv6 - Fixed Filter)
+  hosts: all # Semaphore will apply this to the hosts within your selected 'kapi9' inventory
   gather_facts: true # This automatically runs the setup module to collect facts
 
   tasks:
-    
     - name: Get root filesystem stats dictionary
       ansible.builtin.set_fact:
         # Find the dictionary for the '/' mount point within the ansible_mounts list
@@ -14,9 +13,11 @@
     - name: Set formatted root filesystem size variables
       ansible.builtin.set_fact:
         # Extract total size, format it, provide 'N/A' if missing
-        root_fs_total_hr: "{{ (root_fs_info.size_total | human_readable(unit='B', iec=True)) if root_fs_info.size_total is defined and root_fs_info.size_total is not none else 'N/A' }}"
+        # REMOVED iec=True from human_readable filter for compatibility
+        root_fs_total_hr: "{{ (root_fs_info.size_total | human_readable) if root_fs_info.size_total is defined and root_fs_info.size_total is not none else 'N/A' }}"
         # Extract available size, format it, provide 'N/A' if missing
-        root_fs_available_hr: "{{ (root_fs_info.size_available | human_readable(unit='B', iec=True)) if root_fs_info.size_available is defined and root_fs_info.size_available is not none else 'N/A' }}"
+        # REMOVED iec=True from human_readable filter for compatibility
+        root_fs_available_hr: "{{ (root_fs_info.size_available | human_readable) if root_fs_info.size_available is defined and root_fs_info.size_available is not none else 'N/A' }}"
 
     - name: Display Collected Detailed Information
       ansible.builtin.debug:
@@ -27,7 +28,7 @@
           Architecture: {{ ansible_architecture | default('N/A') }}
           Kernel: {{ ansible_kernel | default('N/A') }}
           Default IPv4: {{ ansible_default_ipv4.address | default('N/A') }}
-          Default IPv6: {{ ansible_default_ipv6.address | default('N/A') }}  # Changed: Using only default IPv6 fact
+          Default IPv6: {{ ansible_default_ipv6.address | default('N/A') }}
           DNS Servers: {{ ansible_dns.nameservers | default([]) | join(', ') | default('N/A') }}
           Total Memory (MB): {{ ansible_memtotal_mb }}
           Processor Cores: {{ ansible_processor_vcpus | default(ansible_processor_cores) | default('N/A') }}
