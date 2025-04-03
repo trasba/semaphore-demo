@@ -2,7 +2,6 @@
 - name: Secure SSH Server with Key-Based Authentication
   hosts: "{{ target_host | default('all') }}" # Allow specifying target host
   become: true
-  become_ask_pass: true # This will prompt for the password
   tasks:
     - name: Ensure PubkeyAuthentication is enabled
       lineinfile:
