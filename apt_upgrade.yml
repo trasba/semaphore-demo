@@ -27,3 +27,11 @@
                      # without removing existing packages or installing new ones
                      # unless strictly required for dependencies of packages being upgraded.
                      # Using 'dist' here would perform a distribution upgrade ('apt full-upgrade').
+
+    - name: Display current distribution version # Name describing this task's action
+      ansible.builtin.debug: # Use the 'debug' module to print information during the playbook run.
+        msg: "System {{ inventory_hostname }} is running {{ ansible_distribution }} version {{ ansible_distribution_version }}"
+        # The 'msg' parameter defines the message to display.
+        # '{{ inventory_hostname }}' is an Ansible magic variable showing the current host being processed.
+        # '{{ ansible_distribution }}' is a fact gathered by Ansible reporting the OS distribution (e.g., "Debian", "Ubuntu").
+        # '{{ ansible_distribution_version }}' is a fact reporting the version of the distribution.
