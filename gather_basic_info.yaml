@@ -1,6 +1,6 @@
 ---
 - name: Gather Detailed Host Information (Simplified IPv6 - Fixed Filter)
-  hosts: all # Semaphore will apply this to the hosts within your selected 'kapi9' inventory
+  hosts: "{{ target_host | default('all') }}" # Allow specifying target host
   gather_facts: true # This automatically runs the setup module to collect facts
 
   tasks:
