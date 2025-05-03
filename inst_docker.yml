@@ -1,0 +1,21 @@
+---
+# This playbook installs Docker on target hosts using the geerlingguy.docker role.
+
+# Ensure the geerlingguy.docker role is installed via ansible-galaxy before running this playbook.
+# Example: ansible-galaxy role install geerlingguy.docker
+
+- name: Install Docker using geerlingguy.docker role # Added a descriptive name for the play
+  hosts: "{{ target_host | default('all') }}" # Allow specifying target host via variable, default to 'all'
+  become: yes # Use privilege escalation (sudo) to install packages and manage services
+
+  roles:
+    # Include the geerlingguy.docker role.
+    # This role handles the steps required to install Docker Engine.
+    - role: geerlingguy.docker
+      # You can add variables here to customize the role's behavior.
+      # Refer to the geerlingguy.docker role documentation for available variables.
+      # Example (uncomment and modify as needed):
+      # docker_edition: "ce" # Use Community Edition (default)
+      # docker_package_state: "present" # Ensure package is installed (default)
+      # docker_users: # Add users to the 'docker' group
+      #   - your_user_name # Replace with the actual username
