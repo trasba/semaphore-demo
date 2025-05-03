@@ -1,0 +1,29 @@
+---
+# This playbook updates the apt package cache and upgrades all installed packages
+# to their latest versions on target hosts using the ansible.builtin.apt module.
+
+# This playbook requires the target hosts to be running a Debian-based distribution
+# (like Ubuntu or Debian) where the apt package manager is used.
+
+- name: Perform a standard system update using apt # Descriptive name for the main play
+  hosts: "{{ target_host | default('all') }}" # Specifies the target hosts for this play.
+                                              # It uses a variable 'target_host' which can be set
+                                              # when running the playbook (e.g., -e "target_host=your_server").
+                                              # If the variable is not provided, it defaults to running
+                                              # on 'all' hosts defined in your inventory.
+  become: yes # This task requires elevated privileges (like root) to perform package management operations.
+              # 'become: yes' uses the configured privilege escalation method (e.g., sudo) to run tasks.
+
+  tasks: # The list of tasks to be executed in this play.
+    - name: Update apt cache and upgrade packages safely # Name describing this specific task's action
+      ansible.builtin.apt: # Use the 'apt' module from the 'ansible.builtin' collection.
+                           # This module is specifically designed for managing packages
+                           # on Debian/Ubuntu systems.
+        update_cache: yes # Parameter to run 'apt update' on the target host.
+                          # This downloads the latest package information from the repositories,
+                          # ensuring that Ansible knows about the newest available package versions.
+        upgrade: yes # Parameter to perform a standard package upgrade ('apt upgrade').
+                     # This upgrades all packages that have a newer version available,
+                     # without removing existing packages or installing new ones
+                     # unless strictly required for dependencies of packages being upgraded.
+                     # Using 'dist' here would perform a distribution upgrade ('apt full-upgrade').
