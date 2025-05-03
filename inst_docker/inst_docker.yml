@@ -8,14 +8,23 @@
   hosts: "{{ target_host | default('all') }}" # Allow specifying target host via variable, default to 'all'
   become: yes # Use privilege escalation (sudo) to install packages and manage services
 
+  vars:
+    # Define the user to be added to the 'docker' group.
+    # This variable will use the value of 'docker_user_var' if passed,
+    # otherwise it will default to 'trasba'.
+    user_to_add_to_docker_group: "{{ docker_user_var | default('trasba') }}"
+
   roles:
     # Include the geerlingguy.docker role.
     # This role handles the steps required to install Docker Engine.
     - role: geerlingguy.docker
-      # You can add variables here to customize the role's behavior.
+      # Pass variables here to customize the role's behavior.
       # Refer to the geerlingguy.docker role documentation for available variables.
-      # Example (uncomment and modify as needed):
+
+      # Add the specified user to the 'docker' group.
+      docker_users:
+        - "{{ user_to_add_to_docker_group }}"
+
+      # Example of other variables (uncomment and modify as needed):
       # docker_edition: "ce" # Use Community Edition (default)
       # docker_package_state: "present" # Ensure package is installed (default)
-      # docker_users: # Add users to the 'docker' group
-      #   - your_user_name # Replace with the actual username
