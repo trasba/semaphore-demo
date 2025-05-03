@@ -1,0 +1,3 @@
+- name: geerlingguy.docker
+  # source: https://github.com/geerlingguy/ansible-role-docker # Not needed for roles directly on Galaxy
+  # version: master # You can specify a specific version or tag here if needed
