@@ -30,8 +30,8 @@
       ansible.builtin.copy:
         content: | # Define the content of the file using a multiline string
           {
-            "ipv6": true, # Enable IPv6
-            "fixed-cidr-v6": "fd00:1410::/48" # Define the IPv6 subnet for Docker
+            "ipv6": true,
+            "fixed-cidr-v6": "fd00:1410::/48"
           }
         dest: /etc/docker/daemon.json # Specify the destination path
         owner: root # Set the file owner to root
