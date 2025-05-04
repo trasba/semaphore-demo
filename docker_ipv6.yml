@@ -1,0 +1,47 @@
+---
+# This playbook configures Docker to enable IPv6 by creating or modifying
+# the /etc/docker/daemon.json file.
+# It checks if the file exists, prints its content if it does,
+# creates it with the specified IPv6 configuration if it doesn't,
+# and restarts the Docker service if the file was created.
+
+- name: Configure Docker for IPv6 # Descriptive name for the play
+  hosts: "{{ target_host | default('all') }}" # Allow specifying target host via variable, default to 'all'
+  become: yes # Use privilege escalation (sudo) to manage files and services
+
+  tasks:
+    - name: Check if /etc/docker/daemon.json exists # Task to check for the file's presence
+      ansible.builtin.stat:
+        path: /etc/docker/daemon.json # Specify the path to the file
+      register: daemon_json_status # Register the result of the stat command in a variable
+
+    - name: Print content of /etc/docker/daemon.json if it exists # Task to read the file content
+      ansible.builtin.command: cat /etc/docker/daemon.json # Execute the cat command to read the file
+      register: daemon_json_content # Register the output of the command
+      when: daemon_json_status.stat.exists # Only run this task if the file exists (checked by the previous task)
+      changed_when: false # This task only reads, it doesn't change the system state
+
+    - name: Display the content of daemon.json # Task to show the file content in the playbook output
+      ansible.builtin.debug:
+        msg: "Content of /etc/docker/daemon.json:\n{{ daemon_json_content.stdout }}" # Display the captured stdout
+      when: daemon_json_status.stat.exists # Only run this task if the file exists
+
+    - name: Create /etc/docker/daemon.json with IPv6 configuration if it does not exist # Task to create the configuration file
+      ansible.builtin.copy:
+        content: | # Define the content of the file using a multiline string
+          {
+            "ipv6": true, # Enable IPv6
+            "fixed-cidr-v6": "fd00:1410::/48" # Define the IPv6 subnet for Docker
+          }
+        dest: /etc/docker/daemon.json # Specify the destination path
+        owner: root # Set the file owner to root
+        group: root # Set the file group to root
+        mode: '0644' # Set file permissions (read/write for owner, read for group and others)
+      register: create_daemon_json # Register the result to check if the file was created/changed
+      when: not daemon_json_status.stat.exists # Only run this task if the file does NOT exist
+
+    - name: Restart docker service if daemon.json was created # Task to restart the Docker service
+      ansible.builtin.service:
+        name: docker # Specify the service name
+        state: restarted # Ensure the service is in a restarted state
+      when: create_daemon_json.changed # Only run this task if the previous 'copy' task made a change (i.e., created the file)
