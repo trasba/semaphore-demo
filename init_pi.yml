@@ -1,0 +1,41 @@
+---
+# This is the master playbook that imports other playbooks for a full server setup and hardening workflow.
+# secure_ssh, apt_upgrade, inst_docker, docker_ipv6
+- name: Full Server Setup and Hardening Workflow
+  hosts: "{{ target_host }}" # target_host is now mandatory. If not provided, Ansible will error.
+  gather_facts: false # No need to gather facts at this top level, as each imported playbook will do it if needed.
+  become: yes # All included playbooks require become, so ensure it here.
+
+  vars:
+    # Define default values for any variables you might want to pass to the imported playbooks
+    # For example, if you consistently want to use 'trasba' as the docker user:
+    default_docker_user: "trasba"
+    # Or make it configurable if you pass 'docker_user_var' to this master playbook:
+    passed_docker_user_var_from_cli: "{{ passed_docker_user_var_from_cli | default(default_docker_user) }}"
+
+  tasks:
+    - name: Run secure_sshd.yml to harden SSH
+      import_playbook: secure_sshd.yml
+      vars:
+        # Pass the target_host explicitly to the imported playbook
+        target_host: "{{ target_host }}"
+
+    - name: Run apt_upgrade.yml to update and upgrade packages
+      import_playbook: apt_upgrade.yml
+      vars:
+        # Pass the target_host explicitly to the imported playbook
+        target_host: "{{ target_host }}"
+
+    - name: Run inst_docker/inst_docker.yml to install Docker
+      import_playbook: inst_docker/inst_docker.yml
+      vars:
+        # Pass the target_host explicitly to the imported playbook
+        target_host: "{{ target_host }}"
+        # Pass the docker_user_var to the inst_docker playbook
+        docker_user_var: "{{ passed_docker_user_var_from_cli }}" # Use the variable name from this playbook's vars
+
+    - name: Run docker_ipv6 to add ipv6 functionality to Docker
+      import_playbook: docker_ipv6.yml
+      vars:
+        # Pass the target_host explicitly to the imported playbook
+        target_host: "{{ target_host }}"
