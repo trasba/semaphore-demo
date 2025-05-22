@@ -1,0 +1,34 @@
+---
+- name: Display SSH Public Keys in Log
+  hosts: "{{ target_host | default('all') }}" # Allow specifying target host
+  gather_facts: no
+  # become: yes # Use become if necessary to access user's .ssh directories
+
+  tasks:
+    - name: Find public key files in common SSH directories
+      ansible.builtin.find:
+        paths:
+          - "~/.ssh"
+          # - "/root/.ssh" # Include if you need keys from the root user
+        patterns: "*.pub"
+        file_type: file
+        recurse: yes
+      register: ssh_keys_found
+      ignore_errors: true # Continue if a .ssh directory or .pub file isn't found
+
+    - name: Read and display the content of found public keys
+      ansible.builtin.shell: "cat {{ item.path }}"
+      loop: "{{ ssh_keys_found.files }}"
+      register: key_content
+      when: ssh_keys_found.files is defined and ssh_keys_found.files | length > 0
+      changed_when: false # This task doesn't change anything
+
+    - name: Print collected public keys to log
+      ansible.builtin.debug:
+        msg: |
+          --- Public Key from {{ inventory_hostname }} ---
+          Path: {{ item.item.path }}
+          Content: {{ item.stdout }}
+          ------------------------------------------
+      loop: "{{ key_content.results }}"
+      when: item.stdout is defined and item.stdout != ""
