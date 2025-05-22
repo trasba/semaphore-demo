@@ -21,6 +21,9 @@
 
   tasks:
     - name: Run secure_sshd.yml to harden SSH
+      import_playbook: gather_basic_info.yml
+
+    - name: Run secure_sshd.yml to harden SSH
       import_playbook: secure_sshd.yml
 
     - name: Run apt_upgrade.yml to update and upgrade packages
