@@ -12,7 +12,7 @@
     # Define the user to be added to the 'docker' group.
     # This variable will use the value of 'docker_user_var' if passed,
     # otherwise it will default to 'trasba'.
-    user_to_add_to_docker_group: "{{ docker_user_var | default('trasba') }}"
+    docker_user: "{{ docker_user | default('trasba') }}"
 
   roles:
     # Include the geerlingguy.docker role.
@@ -23,7 +23,7 @@
 
       # Add the specified user to the 'docker' group.
       docker_users:
-        - "{{ user_to_add_to_docker_group }}"
+        - "{{ docker_user }}"
 
       # Example of other variables (uncomment and modify as needed):
       # docker_edition: "ce" # Use Community Edition (default)
