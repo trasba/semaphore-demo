@@ -19,18 +19,7 @@
     # or fall back to 'default_docker_user'.
     docker_user: "{{ docker_user | default(default_docker_user) }}"
 
-  tasks:
-    - name: Run secure_sshd.yml to harden SSH
-      import_playbook: gather_basic_info.yml
-
-    - name: Run secure_sshd.yml to harden SSH
-      import_playbook: secure_sshd.yml
-
-    - name: Run apt_upgrade.yml to update and upgrade packages
-      import_playbook: apt_upgrade.yml
-
-    - name: Run inst_docker/inst_docker.yml to install Docker
-      import_playbook: inst_docker/inst_docker.yml
-
-    - name: Run docker_ipv6 to add ipv6 functionality to Docker
-      import_playbook: docker_ipv6.yml
+- import_playbook: secure_sshd.yml
+- import_playbook: apt_upgrade.yml
+- import_playbook: inst_docker/inst_docker.yml
+- import_playbook: docker_ipv6.yml
