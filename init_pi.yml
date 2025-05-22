@@ -6,19 +6,6 @@
   gather_facts: false # No need to gather facts at this top level, as each imported playbook will do it if needed.
   become: yes # All included playbooks require become, so ensure it here.
 
-  vars:
-    # Variables defined here are available to all imported playbooks.
-    # The 'target_host' variable will be passed from the command line/Semaphore arguments.
-    # It will automatically be available to all imported playbooks.
-    # No need to redefine it within each 'import_playbook' task's vars.
-
-    # Define default for docker_user_var, and allow override from CLI
-    default_docker_user: "trasba"
-    # This variable will be used by inst_docker.yml.
-    # Its value will come from 'docker_user' (if provided from Semaphore)
-    # or fall back to 'default_docker_user'.
-    docker_user: "{{ docker_user | default(default_docker_user) }}"
-
 - import_playbook: secure_sshd.yml
 - import_playbook: apt_upgrade.yml
 - import_playbook: inst_docker/inst_docker.yml
