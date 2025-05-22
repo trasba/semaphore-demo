@@ -23,7 +23,7 @@
 
       # Add the specified user to the 'docker' group.
       docker_users:
-        - "{{ docker_user }}"
+        - "{{ docker_user_var }}"
 
       # Example of other variables (uncomment and modify as needed):
       # docker_edition: "ce" # Use Community Edition (default)
