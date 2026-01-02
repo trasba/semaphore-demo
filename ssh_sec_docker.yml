@@ -1,0 +1,14 @@
+---
+- name: Raspberry Pi Provisioning
+  hosts: "{{ target_host }}"
+  gather_facts: yes
+
+  pre_tasks:
+    - name: Ensure target_host is defined
+      ansible.builtin.fail:
+        msg: "Please specify a 'target_host' (e.g., pi-01)."
+      when: target_host is not defined or target_host == ""
+
+  roles:
+    - common
+    - security

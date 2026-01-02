@@ -1,0 +1,83 @@
+---
+# 1. EMERGENCY KEY IMPORT (Ensures keys exist before we check them)
+- name: Ensure SSH keys are imported from GitHub
+  ansible.posix.authorized_key:
+    user: "{{ ansible_user }}"
+    state: present
+    key: "https://github.com/{{ github_user | default('trasba') }}.keys"
+
+# 2. PRE-FLIGHT SAFETY CHECK (Native Ansible Slurp)
+- name: Read authorized_keys content
+  ansible.builtin.slurp:
+    path: "~/.ssh/authorized_keys"
+  register: keys_encoded
+
+- name: Verify authorized_keys contains active keys
+  ansible.builtin.fail:
+    msg: "SAFETY ABORT: No active SSH keys found in ~/.ssh/authorized_keys! Check GitHub user variable."
+  when: "'ssh-' not in (keys_encoded.content | b64decode)"
+
+# 3. HARDEN MAIN CONFIG
+- name: Harden main sshd_config
+  become: yes
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    state: present
+  loop:
+    - { regexp: "^(#)*PasswordAuthentication", line: "PasswordAuthentication no" }
+    - { regexp: "^(#)*KbdInteractiveAuthentication", line: "KbdInteractiveAuthentication no" }
+    - { regexp: "^(#)*ChallengeResponseAuthentication", line: "ChallengeResponseAuthentication no" }
+    - { regexp: "^(#)*UsePAM", line: "UsePAM no" }
+    - { regexp: "^(#)*PubkeyAuthentication", line: "PubkeyAuthentication yes" }
+  notify: Restart ssh
+
+# 4. FIX OVERRIDE FILES IN SUBDIRECTORY
+- name: Find all .conf files in sshd_config.d
+  ansible.builtin.find:
+    paths: /etc/ssh/sshd_config.d
+    patterns: "*.conf"
+  register: ssh_include_files
+
+- name: Disable PasswordAuth in include files
+  become: yes
+  ansible.builtin.replace:
+    path: "{{ item.path }}"
+    regexp: '(?i)^(?!#)(.*PasswordAuthentication\s+)yes'
+    replace: '\1no'
+  loop: "{{ ssh_include_files.files }}"
+  notify: Restart ssh
+
+- name: Enable PubkeyAuth in include files
+  become: yes
+  ansible.builtin.replace:
+    path: "{{ item.path }}"
+    regexp: '(?i)^(?!#)(.*PubkeyAuthentication\s+)no'
+    replace: '\1yes'
+  loop: "{{ ssh_include_files.files }}"
+  notify: Restart ssh
+
+# 5. FORCE RESTART NOW
+- name: Apply changes immediately
+  ansible.builtin.meta: flush_handlers
+
+# 6. VERIFY THE RUNNING CONFIGURATION (The "Truth" Audit)
+- name: Get running SSH configuration
+  ansible.builtin.command: sshd -T
+  register: sshd_runtime
+  changed_when: false
+  become: yes
+
+- name: Audit - Final Verification Checks
+  ansible.builtin.fail:
+    msg: "SECURITY ALERT: {{ item.error }}"
+  when: "item.check in (sshd_runtime.stdout | lower)"
+  loop:
+    - { check: "passwordauthentication yes", error: "Password Auth is still active!" }
+    - { check: "usepam yes", error: "PAM is still active!" }
+    - { check: "pubkeyauthentication no", error: "Pubkey Auth is DISABLED!" }
+
+- name: Hardening Verified
+  ansible.builtin.debug:
+    msg: "SSH Security Audit Passed on {{ inventory_hostname }}."
