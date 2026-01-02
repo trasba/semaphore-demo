@@ -1,37 +1,43 @@
 ---
-# This playbook updates the apt package cache and upgrades all installed packages
-# to their latest versions on target hosts using the ansible.builtin.apt module.
+- name: System Maintenance and Kernel Updates
+  hosts: "{{ target_host | default('all') }}"
+  become: yes
+  gather_facts: yes
 
-# This playbook requires the target hosts to be running a Debian-based distribution
-# (like Ubuntu or Debian) where the apt package manager is used.
+  # Safety check: Ensure the user specified a host in Semaphore
+  pre_tasks:
+    - name: Verify target_host is defined
+      ansible.builtin.fail:
+        msg: "Target host is not defined. Please specify a host or group (e.g., pi-01)."
+      when: target_host is not defined or target_host == ""
 
-- name: Perform a standard system update using apt # Descriptive name for the main play
-  hosts: "{{ target_host | default('all') }}" # Specifies the target hosts for this play.
-                                              # It uses a variable 'target_host' which can be set
-                                              # when running the playbook (e.g., -e "target_host=your_server").
-                                              # If the variable is not provided, it defaults to running
-                                              # on 'all' hosts defined in your inventory.
-  become: yes # This task requires elevated privileges (like root) to perform package management operations.
-              # 'become: yes' uses the configured privilege escalation method (e.g., sudo) to run tasks.
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: yes
+        cache_valid_time: 3600
 
-  tasks: # The list of tasks to be executed in this play.
-    - name: Update apt cache and upgrade packages safely # Name describing this specific task's action
-      ansible.builtin.apt: # Use the 'apt' module from the 'ansible.builtin' collection.
-                           # This module is specifically designed for managing packages
-                           # on Debian/Ubuntu systems.
-        update_cache: yes # Parameter to run 'apt update' on the target host.
-                          # This downloads the latest package information from the repositories,
-                          # ensuring that Ansible knows about the newest available package versions.
-        upgrade: yes # Parameter to perform a standard package upgrade ('apt upgrade').
-                     # This upgrades all packages that have a newer version available,
-                     # without removing existing packages or installing new ones
-                     # unless strictly required for dependencies of packages being upgraded.
-                     # Using 'dist' here would perform a distribution upgrade ('apt full-upgrade').
+    - name: Perform full system upgrade
+      ansible.builtin.apt:
+        upgrade: dist
+        autoremove: yes
+        autoclean: yes
+      register: apt_result
 
-    - name: Display current distribution version # Name describing this task's action
-      ansible.builtin.debug: # Use the 'debug' module to print information during the playbook run.
-        msg: "System {{ inventory_hostname }} is running {{ ansible_distribution }} version {{ ansible_distribution_version }}"
-        # The 'msg' parameter defines the message to display.
-        # '{{ inventory_hostname }}' is an Ansible magic variable showing the current host being processed.
-        # '{{ ansible_distribution }}' is a fact gathered by Ansible reporting the OS distribution (e.g., "Debian", "Ubuntu").
-        # '{{ ansible_distribution_version }}' is a fact reporting the version of the distribution.
+    - name: Check if a reboot is required
+      ansible.builtin.stat:
+        path: /var/run/reboot-required
+      register: reboot_required_file
+
+    - name: Maintenance Summary
+      ansible.builtin.debug:
+        msg: 
+          - "Host:            {{ inventory_hostname }}"
+          - "OS Distribution: {{ ansible_distribution }} {{ ansible_distribution_version }}"
+          - "Packages Changed: {{ apt_result.changed }}"
+          - "Reboot Required: {{ reboot_required_file.stat.exists }}"
+
+    - name: Notify if reboot is needed
+      ansible.builtin.debug:
+        msg: "!!! WARNING: Reboot is required on {{ inventory_hostname }} to apply Kernel/System updates !!!"
+      when: reboot_required_file.stat.exists
