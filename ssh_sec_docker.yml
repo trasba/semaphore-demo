@@ -2,6 +2,7 @@
 - name: Raspberry Pi Provisioning
   hosts: "{{ target_host }}"
   gather_facts: yes
+  become: yes
 
   pre_tasks:
     - name: Ensure target_host is defined
@@ -10,5 +11,10 @@
       when: target_host is not defined or target_host == ""
 
   roles:
-    - common
-    - security
+    - role: common
+    - role: security
+    - role: geerlingguy.docker
+      vars:
+        # This converts a single string into a list, 
+        # but keeps a list as a list.
+        docker_users: "{{ [docker_users] | flatten }}"
