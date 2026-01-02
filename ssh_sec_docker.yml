@@ -18,3 +18,10 @@
         # This converts a single string into a list, 
         # but keeps a list as a list.
         docker_users: "{{ [docker_users] | flatten }}"
+
+        docker_daemon_options:
+          ipv6: true
+          fixed-cidr-v6: "fd00:1410::/48"
+          # Adding experimental is often required for IPv6 NAT/Routing in newer Docker versions
+          experimental: true 
+          ip6tables: true
