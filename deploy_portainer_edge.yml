@@ -1,0 +1,36 @@
+---
+- name: Deploy Portainer Edge Agent
+  hosts: "{{ target_host }}"
+  become: yes
+  gather_facts: yes
+
+  vars:
+    # This directory will hold your compose file and data
+    agent_dir: "/opt/portainer_agent"
+
+  tasks:
+    - name: Validate Semaphore Inputs
+      ansible.builtin.fail:
+        msg: "Missing required variables! Please fill in edge_id and edge_key in the Semaphore prompt."
+      when: >
+        edge_id is not defined or edge_id == "" or
+        edge_key is not defined or edge_key == ""
+
+    - name: Ensure agent directory exists
+      ansible.builtin.file:
+        path: "{{ agent_dir }}/data"
+        state: directory
+        mode: '0755'
+        recurse: yes
+
+    - name: Deploy docker-compose.yml from template
+      ansible.builtin.template:
+        src: templates/docker-compose-portainer.yml.j2
+        dest: "{{ agent_dir }}/docker-compose.yml"
+        mode: '0600'
+
+    - name: Start Portainer Edge Agent
+      community.docker.docker_compose_v2:
+        project_src: "{{ agent_dir }}"
+        state: present
+        pull: always
