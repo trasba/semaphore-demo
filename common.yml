@@ -1,0 +1,7 @@
+---
+- name: Common Infrastructure Setup
+  hosts: "{{ target_host }}"
+  gather_facts: yes
+
+  roles:
+    - common
