@@ -1,0 +1,33 @@
+---
+- name: Configure IPv6 to accept router advertisements (=2) and Persistent Sysctl Settings for active docker ipv6
+  hosts: "{{ target_host }}"
+  become: yes
+
+  tasks:
+    - name: Ensure IPv6 Router Advertisements are handled for all physical interfaces
+      ansible.posix.sysctl:
+        name: "net.ipv6.conf.{{ item }}.accept_ra"
+        value: '2'
+        state: present
+        reload: yes
+      loop: "{{ ansible_interfaces | select('match', '^(eth|en|wlan|wl)') | list + ['all', 'default'] }}"
+      ignore_errors: yes
+
+    - name: Create a persistent sysctl file for IPv6 Docker compatibility
+      ansible.builtin.copy:
+        dest: /etc/sysctl.d/10-docker-ipv6.conf
+        content: |
+          # Keep IPv6 Default Gateway even when Docker enables forwarding
+          net.ipv6.conf.all.accept_ra=2
+          net.ipv6.conf.default.accept_ra=2
+          # Specific interface overrides
+          net.ipv6.conf.eth0.accept_ra=2
+          net.ipv6.conf.wlan0.accept_ra=2
+        owner: root   # Fixed indentation here
+        group: root   # Fixed indentation here
+        mode: '0644'   # Fixed indentation here
+      notify: restart sysctl
+
+  handlers:
+    - name: restart sysctl
+      ansible.builtin.command: sysctl --system
